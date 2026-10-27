@@ -1,21 +1,54 @@
-using UnityEditor.ShaderGraph.Internal;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using Unity.Netcode;
 
-public class PlayerNetwork : NetworkBehaviour
+public class PlayerMovement : NetworkBehaviour
 {
-    private void Update()
+    [SerializeField] private InputActionReference moveAction;
+    [SerializeField] private float moveSpeed = 3f;
+
+    private Vector2 moveInput;
+    private Rigidbody Player;
+
+    private void Awake()
+    {
+        Player = GetComponent<Rigidbody>();
+    }
+
+    public override void OnNetworkSpawn()
     {
         if (!IsOwner) return;
 
-        Vector3 MoveDirection = new Vector3(0,0,0);
+        moveAction.action.Enable();
+    }
 
-        if (Input.GetKey(KeyCode.W)) MoveDirection.z = +1f;
-        if (Input.GetKey(KeyCode.S)) MoveDirection.z = -1f;
-        if (Input.GetKey(KeyCode.A)) MoveDirection.x = -1f;
-        if (Input.GetKey(KeyCode.D)) MoveDirection.x = +1f;
+    public override void OnNetworkDespawn()
+    {
+        if (!IsOwner) return;
 
-        float MoveSpeed = 3f;
-        transform.position += MoveDirection * MoveSpeed * Time.deltaTime;
+        moveAction.action.Disable();
+        moveInput = Vector2.zero;
+    }
+
+    private void Update()
+    {
+        if (!IsSpawned || !IsOwner) return;
+
+        moveInput = moveAction.action.ReadValue<Vector2>();
+    }
+
+    private void FixedUpdate()
+    {
+        if (!IsSpawned || !IsOwner) return;
+
+        Vector3 movement = new Vector3(
+            moveInput.x,
+            0f,
+            moveInput.y
+        );
+
+        Player.MovePosition(
+            Player.position + movement * moveSpeed * Time.fixedDeltaTime
+        );
     }
 }
