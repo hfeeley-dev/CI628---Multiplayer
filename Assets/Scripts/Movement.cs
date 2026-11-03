@@ -47,6 +47,9 @@ public class PlayerMovement : NetworkBehaviour
             moveInput.y
         );
 
+        LobbyManager GameLobby = FindFirstObjectByType<LobbyManager>();
+        if (GameLobby != null && GameLobby.IsGamePaused()) return;
+
         Player.MovePosition(
             Player.position + movement * moveSpeed * Time.fixedDeltaTime
         );

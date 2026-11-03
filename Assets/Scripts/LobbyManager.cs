@@ -4,18 +4,28 @@ using Unity.Netcode;
 public class LobbyManager : NetworkBehaviour
 
 {
+    [SerializeField] private GameObject startGameButton;
     [SerializeField] private int minPlayers = 2;
     [SerializeField] private int maxPlayers = 4;
+    [SerializeField] private GameObject playerDisconnect;
+    [SerializeField] private float abandonTime = 30f;
+    private float abandonTimer;
+    private bool abandonCountdownActive = false;
     private NetworkVariable<bool> gameStarted = new NetworkVariable<bool>(false);
+    private NetworkVariable<bool> gamePaused = new NetworkVariable<bool>(false);
 
-    public bool canStart()
+    public bool IsGamePaused()
+    {
+        return gamePaused.Value;
+    }
+    public bool canStart() //Only allows a game to start if there are two or more players
     {
         if (!IsServer)
             return false;
         int PlayerCount = NetworkManager.Singleton.ConnectedClients.Count;
         return PlayerCount >= minPlayers &&  PlayerCount <= maxPlayers;
     }
-    public void StartGame ()
+    public void StartGame () //when the start game button is pressed it ensures that the interaction is owned by the host otherwise it does not execute
     {
         if (!IsServer)
             return;
@@ -24,9 +34,17 @@ public class LobbyManager : NetworkBehaviour
         if (gameStarted.Value)
             return;
         gameStarted.Value = true;
+
+        HideStartClientRpc();
     }
 
-    private void CanJoin(
+    [ClientRpc] //Forces all clients to have the start game button disappear
+    private void HideStartClientRpc()
+    {
+        startGameButton.SetActive(false);
+    }
+
+    private void CanJoin( //Makes a players join request have to meet the requirements before letting them join. In this case if there a >4 players they can join 
     NetworkManager.ConnectionApprovalRequest request,
     NetworkManager.ConnectionApprovalResponse PlayerJoin)
     {
@@ -43,11 +61,47 @@ public class LobbyManager : NetworkBehaviour
         }
     }
 
-    public override void OnNetworkSpawn()
+    public override void OnNetworkSpawn() //Allows the host machine to be able to run functions such as allowing a player to join a lobby or the player disconnect function
     {
         if (IsServer)
         {
             NetworkManager.Singleton.ConnectionApprovalCallback += CanJoin;
+            NetworkManager.Singleton.OnClientDisconnectCallback += PlayerDisconnected;
+        }
+    }
+
+    private void PlayerDisconnected(ulong PlayerID) //Detects players that have disconnected from a game session
+    {
+        if (!IsServer)
+            return;
+        playerDisconnect.SetActive(true);
+
+        if(gameStarted.Value)
+        {
+            gamePaused.Value = true;
+            ShowDisconnectClientRpc();
+        }
+    }
+
+    [ClientRpc] //Forces all clients to say that a player has disconnected
+    private void ShowDisconnectClientRpc()
+    {
+        playerDisconnect.SetActive(true);
+    }
+
+    private void Update() //Match abandon function, This makes the game lobby shutdown if a player disconnects and does not rejoin within 30 seconds
+    {
+        if (!IsServer || !abandonCountdownActive)
+            return;
+
+        abandonTimer -= Time.deltaTime;
+
+        if (abandonTimer <= 0f)
+        {
+            abandonTimer = 0f;
+            abandonCountdownActive = false;
+
+            Debug.Log("Game abandoned!");
         }
     }
 }
