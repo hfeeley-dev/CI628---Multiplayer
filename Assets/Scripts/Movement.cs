@@ -5,7 +5,10 @@ using Unity.Netcode;
 public class PlayerMovement : NetworkBehaviour
 {
     [SerializeField] private InputActionReference moveAction;
+    [SerializeField] private InputActionReference jumpAction;
     [SerializeField] private float moveSpeed = 3f;
+    [SerializeField] private float jumpForce = 5f;
+    private bool jumpPressed;
 
     private Vector2 moveInput;
     private Rigidbody Player;
@@ -20,6 +23,7 @@ public class PlayerMovement : NetworkBehaviour
         if (!IsOwner) return;
 
         moveAction.action.Enable();
+        jumpAction.action.Enable();
     }
 
     public override void OnNetworkDespawn()
@@ -28,6 +32,7 @@ public class PlayerMovement : NetworkBehaviour
 
         moveAction.action.Disable();
         moveInput = Vector2.zero;
+        jumpAction.action.Disable();
     }
 
     private void Update()
@@ -35,6 +40,11 @@ public class PlayerMovement : NetworkBehaviour
         if (!IsSpawned || !IsOwner) return;
 
         moveInput = moveAction.action.ReadValue<Vector2>();
+        if (jumpAction.action.WasPressedThisFrame())
+        {
+            jumpPressed = true;
+            Debug.Log("Jump was pressed");
+        }
     }
 
     private void FixedUpdate()
@@ -46,6 +56,12 @@ public class PlayerMovement : NetworkBehaviour
             0f,
             moveInput.y
         );
+
+        if (jumpPressed)
+        {
+            Player.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
+            jumpPressed = false;                                           
+        }
 
         LobbyManager GameLobby = FindFirstObjectByType<LobbyManager>();
         if (GameLobby != null && GameLobby.IsGamePaused()) return;

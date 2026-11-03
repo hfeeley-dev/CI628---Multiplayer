@@ -8,9 +8,7 @@ public class LobbyManager : NetworkBehaviour
     [SerializeField] private int minPlayers = 2;
     [SerializeField] private int maxPlayers = 4;
     [SerializeField] private GameObject playerDisconnect;
-    [SerializeField] private float abandonTime = 30f;
-    private float abandonTimer;
-    private bool abandonCountdownActive = false;
+
     private NetworkVariable<bool> gameStarted = new NetworkVariable<bool>(false);
     private NetworkVariable<bool> gamePaused = new NetworkVariable<bool>(false);
 
@@ -87,21 +85,5 @@ public class LobbyManager : NetworkBehaviour
     private void ShowDisconnectClientRpc()
     {
         playerDisconnect.SetActive(true);
-    }
-
-    private void Update() //Match abandon function, This makes the game lobby shutdown if a player disconnects and does not rejoin within 30 seconds
-    {
-        if (!IsServer || !abandonCountdownActive)
-            return;
-
-        abandonTimer -= Time.deltaTime;
-
-        if (abandonTimer <= 0f)
-        {
-            abandonTimer = 0f;
-            abandonCountdownActive = false;
-
-            Debug.Log("Game abandoned!");
-        }
     }
 }

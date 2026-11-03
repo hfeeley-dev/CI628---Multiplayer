@@ -94,7 +94,7 @@ MonoBehaviour:
   TickSyncChildren: 0
   UseUnreliableDeltas: 0
   SyncPositionX: 1
-  SyncPositionY: 0
+  SyncPositionY: 1
   SyncPositionZ: 1
   SyncRotAngleX: 0
   SyncRotAngleY: 0
@@ -156,7 +156,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PlayerMovement
   ShowTopMostFoldoutHeaderGroup: 1
   moveAction: {fileID: -1680190386980627800, guid: 052faaac586de48259a63d0c4782560b, type: 3}
+  jumpAction: {fileID: 7092517237866687251, guid: a634971e4eaf5c34985fac1b6390d09f, type: 3}
   moveSpeed: 5
+  jumpForce: 5
 --- !u!54 &-794216477733498258
 Rigidbody:
   m_ObjectHideFlags: 0
