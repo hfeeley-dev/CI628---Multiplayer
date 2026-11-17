@@ -5,7 +5,8 @@ using UnityEngine;
 public class RoundManager : NetworkBehaviour
 {
     [SerializeField] private int RoundsToWin = 3;
-    private bool GameWon = false;
+    private NetworkVariable<bool> GameWon = new NetworkVariable<bool>(false);
+    private NetworkVariable<bool> RoundActive = new NetworkVariable<bool>(false);
     private NetworkList<int> PlayerWins;
     private NetworkList<ulong> PlayerInfo;
 
@@ -41,9 +42,9 @@ public class RoundManager : NetworkBehaviour
         PlayerWins.Add(0);
     }
 
-    public void RoundWon(ulong PlayerID)
+    public void RoundWon(ulong PlayerID) // Updates 
     {
-        if (!IsServer || GameWon)
+        if (!IsServer || GameWon.Value)
             return;
 
         for (int i = 0; i < PlayerInfo.Count; i++)
@@ -53,11 +54,24 @@ public class RoundManager : NetworkBehaviour
                 PlayerWins[i]++;
                 if (PlayerWins[i] >= RoundsToWin)
                 {
-                    GameWon = true;
+                    GameWon.Value = true;
                 }
                 return;
             }
         }
+    }
+
+    public bool IsGameWon() // Checks if the game hsa been won
+    {
+        return GameWon.Value;
+    }
+
+    public void StartRound()
+    {
+        if (!IsServer || GameWon.Value || RoundActive.Value)
+            return;
+
+        RoundActive.Value = true;
     }
 }
 
