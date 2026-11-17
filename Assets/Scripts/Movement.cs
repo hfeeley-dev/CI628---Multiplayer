@@ -8,8 +8,9 @@ public class PlayerMovement : NetworkBehaviour
     [SerializeField] private InputActionReference jumpAction;
     [SerializeField] private float moveSpeed = 3f;
     [SerializeField] private float jumpForce = 5f;
+    [SerializeField] private float GroundDistance = 1f;
+    private bool IsGrounded;
     private bool jumpPressed;
-
     private Vector2 moveInput;
     private Rigidbody Player;
 
@@ -57,11 +58,11 @@ public class PlayerMovement : NetworkBehaviour
             moveInput.y
         );
 
-        if (jumpPressed)
+        if (jumpPressed && IsGrounded)
         {
-            Player.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
-            jumpPressed = false;                                           
+            Player.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);                                         
         }
+        jumpPressed = false;
 
         LobbyManager GameLobby = FindFirstObjectByType<LobbyManager>();
         if (GameLobby != null && GameLobby.IsGamePaused()) return;
@@ -69,5 +70,11 @@ public class PlayerMovement : NetworkBehaviour
         Player.MovePosition(
             Player.position + movement * moveSpeed * Time.fixedDeltaTime
         );
+
+        IsGrounded = Physics.Raycast(
+            transform.position,
+            Vector3.down,
+            GroundDistance
+         );        
     }
 }
